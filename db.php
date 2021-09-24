@@ -1,4 +1,6 @@
 <?php
+
+//
 session_start();
 $global = array();
 header("Content-Type: application/json; charset=UTF-8");
