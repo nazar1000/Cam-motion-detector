@@ -561,14 +561,14 @@ class Node {
 
     }
 }
-
+let objectId = 0;
 class Object {
     constructor(nodesNo, groupNo) {
         this.x = 0;
         this.y = 0;
         this.nodesNo = nodesNo;
         this.groupNo = groupNo;
-        this.id = Math.round(Math.random() * 5000);
+        this.id = objectId++;
         this.spreadX;
         this.spreadY;
         this.timeCreated = Date.now();
@@ -658,7 +658,8 @@ class Object {
             ctx.fillStyle = "yellow";
             // ctx.fillText("SUS DETECTED " /*+ this.id*/ +((this.delayTimeStamp+this.delay)-frameCounter)  , this.x-50, this.y)
             // ctx.fillText("SUS DETECTED " + this.timeAlive  , this.x-50, this.y)
-            ctx.fillText("O " + this.id + " N " + this.average, this.x - 50, this.y)
+            // ctx.fillText("O " + this.id + " N " + this.average, this.x - 50, this.y)
+            ctx.fillText("OBJ", this.x - this.spreadX / 2, this.y - this.spreadY / 2 + 10)
 
             ctx.stroke();
         }
