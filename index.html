@@ -11,8 +11,8 @@
 	<link rel="stylesheet" href="design.css">
 	<!-- <link rel="stylesheet" href="screen.css"> -->
 	<!-- <link rel="stylesheet" href="print.css"> -->
-	<script src="jquery-3.6.0.min.js"></script>
-	<title>Motion Senor</title>
+	<!-- <script src="jquery-3.6.0.min.js"></script> -->
+	<title>Motion Sensor</title>
 </head>
 
 <!-- <?php -->
@@ -20,7 +20,9 @@
 <!-- ?> -->
 
 <body>
-	<div id="container">
+	<div id="motion_detector_container">
+
+		<h1>Camera motion detector</h1>
 		<div id="canvas_container">
 
 			<!-- <form id="canvas_form" method="POST" onsubmit="event.preventDefault()"> -->
@@ -34,91 +36,106 @@
 				<!-- <button name="form"> button</button> -->
 
 				<div id="canvas">
-
-					<h1>Canvas </h1>
 					<canvas></canvas>
 				</div>
 			</form>
 
-			<div id="controls">
-				<button onclick="playVid()" type="button">Play Video</button>
-				<button onclick="pauseVid()" type="button">Pause Video</button>
-				<button onclick="resetVid()" type="button">Reset</button>
-				<button onclick="printStats()" type="button">Check Stats</button><br>
-				<div id="stats_1">
-					<p>Fps: <span class="stats"></span></p>
-					<p>Usage: <span class="stats"></span></p>
-				</div>
 
-				<h3>Modes</h3>
-				Person:<input type="checkbox" class="mode_check" onclick="changeMode(0)">
-				Road:<input type="checkbox" class="mode_check" onclick="changeMode(1)">
-				Details:<input type="checkbox" class="mode_check" onclick="changeMode(2)">
-				Custom:<input type="checkbox" class="mode_check" onclick="changeMode(3)"> <br>
-
-				<h3>Settings</h3>
-				Custom area <input type="checkbox" class="show_grid" onclick="isCustomArea =! isCustomArea"> <label>
-					*Recomended</label> <br>
-				<hr>
-				<label>Grid Size</label><input type="range" min="1" max="10" value="4" class="slider">
-				<p>Value: <span class="control_labels"></span></p> <br>
-				<hr>
-				<label>Pixel ignore</label><input type="range" min="10" max="50" value="30" class="slider">
-				<p>Value: <span class="control_labels"></span></p> <br>
-				<hr>
-				<label>Node distance</label><input type="range" min="10" max="100" value="60" class="slider">
-				<p>Value: <span class="control_labels"></span></p> <br>
-				<hr>
-				<label>Pixels for obj</label><input type="range" min="1" max="30" value="5" class="slider">
-				<p>Value: <span class="control_labels"></span></p><br>
-				<hr>
-				<label>Min movement</label><input type="range" min="1" max="20" value="5" class="slider">
-				<p>Value: <span class="control_labels"></span></p><br>
-
-				<h3>Debug</h3>
-				Show grid:<input type="checkbox" class="show_grid" onclick="showGrid = !showGrid">
-				Show Active grid:<input type="checkbox" class="show_grid" onclick="showActiveGrid = !showActiveGrid">
+		</div>
+		<div id="controls">
+			<button onclick="playVid()" type="button">Play Video</button>
+			<button onclick="pauseVid()" type="button">Pause Video</button>
+			<button onclick="resetVid()" type="button">Reset</button>
+			<button onclick="printStats()" type="button">Check Stats</button><br>
+			<div id="stats_1">
+				<p>Fps: <span class="stats"></span></p>
+				<p>Usage: <span class="stats"></span></p>
 			</div>
-			<div id="triggers-container">
+
+			<h3>Modes</h3>
+			Person:<input type="checkbox" class="mode_check" onclick="changeMode(0)">
+			Road:<input type="checkbox" class="mode_check" onclick="changeMode(1)">
+			Details:<input type="checkbox" class="mode_check" onclick="changeMode(2)">
+			Custom:<input type="checkbox" class="mode_check" onclick="changeMode(3)"> <br>
+
+			<h3>Settings</h3>
+			Custom area <input type="checkbox" class="show_grid" onclick="isCustomArea =! isCustomArea"> <label>
+				*Recommended</label> <br>
+			<hr>
+
+			<div class="pixel_setting">
+				<label>Grid size</label>
+				<input type="number" class="slider" min="1" max="10" value="4"
+					onchange="gridSize = parseInt(this.value)">
+				<label>Spacing or distance between checked pixel, (value 1 will cause every pixel to be
+					checked)</label>
+			</div>
+			<hr>
+			<div class="pixel_setting">
+				<label>Pixel sensitivity</label>
+				<input type="number" class="slider" id="sensitivity_slider" min="10" max="50" value="30"
+					onchange="pixelIgnoreRange = parseInt(this.value)" disabled>
+				<input type="checkbox" id="sensitivity_toggle" onchange="toggleAutoSensitivity()" checked>
+				<label>(normal auto) Pixels within specified range will be treated as background noise</label>
+			</div>
+			<hr>
+			<div class="pixel_setting">
+				<label>Node distance</label>
+				<input type="number" class="slider" min="10" max="100" value="60"
+					onchange="nodeDistance = parseInt(this.value)">
+				<label>Distance between individual pixels (low number Recommended</label>
+			</div>
+			<hr>
+			<div class="pixel_setting">
+				<label>Pixels for obj</label>
+				<input type="number" class="slider" min="1" max="30" value="5"
+					onchange="pixelsRequiredForObject = parseInt(this.value)">
+				<label>How many connected pixels are required to be treated as an object</label>
+			</div>
+			<hr>
+			<div class="pixel_setting">
+				<label>Min movement</label>
+				<input type="number" class="slider" min="1" max="20" value="5"
+					onchange="minimumMovements = parseInt(this.value)">
+				<label>How many pixels needs to change within object for the object to stay alive</label>
+			</div>
 
 
-				<div id="triggers">
-					<div id="triggers-container_title">
-						<h3>Custom Areas</h3>
 
-						<!-- <?php
-								// if (isset($_SESSION["testing"])) {
-								// echo "sucks";
-								// print_r($_SESSION["testing"]);
-								// session_unset();
-								// session_destroy();
-								// }
+			<h3>Debug</h3>
+			Show grid:<input type="checkbox" class="show_grid" onclick="showGrid = !showGrid">
+			Show Active grid:<input type="checkbox" class="show_grid" onclick="showActiveGrid = !showActiveGrid">
+		</div>
+		<div id="triggers-container">
 
-								?> -->
-					</div>
-
-
+			<div id="triggers">
+				<div id="triggers-container_title">
+					<h3>Custom Areas</h3>
 				</div>
-				<div id="trigger_log">
-					<h3>Alert</h3>
-				</div>
 
+				<div id="custom_area_message">
+					<h4>Toggle custom area and draw a rectangle on the canvas to add a custom area!</h4>
+				</div>
 
 			</div>
+			<div id="trigger_log">
+				<h3>Alert</h3>
+			</div>
+
+
 		</div>
 		<div id="video-container">
-			<h1>Video</h1>
 			<video type="video/mp4"></video>
 		</div>
 
 		<div>
-			<h1>Image</h1>
-			<img></img>
+			<!-- <h1>Image</h1>
+			<img></img> -->
 		</div>
 	</div>
 
 
 	<script src="javascript.js"></script>
 	<script src="UI.js"></script>
-	<script src="ajax.js"></script>
+	<!-- <script src="ajax.js"></script> -->
 </body>

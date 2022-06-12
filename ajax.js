@@ -1,7 +1,7 @@
 //for database support only ignore...
 
 function sendData() {
-    if (true) return; //remove this for database
+    // if (true) return; //remove this for database
     let FoundResults = new Promise(function (myResolve, myReject) {
         fetch("db.php", {
             method: "POST",

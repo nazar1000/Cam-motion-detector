@@ -13,6 +13,8 @@
 //   });
 // }
 
+let useDatabase = false;
+
 const mouse = {
     click: false,
     x: null,
@@ -31,6 +33,10 @@ canvas.addEventListener("mousedown", function (e) {
         area.push(new CustomArea(mouse.x, mouse.y, 0, 0));
         newArea = area[area.length - 1];
         mouse.click = false;
+
+        if (area.length < 1) {
+            document.getElementById("custom_area_message").style.display = "block";
+        }
 
     }
 })
@@ -70,6 +76,7 @@ canvas.addEventListener("mouseup", function (e) {
 });
 
 let isDrawingNewArea = false; // draws new area while user is drawing;
+
 canvas.addEventListener("mousemove", function (e) {
     mouse.x = e.x - canvasPosition.left;
     mouse.y = Math.round(e.y - canvasPosition.top) + window.pageYOffset;
@@ -136,28 +143,29 @@ let controls = document.getElementsByClassName("slider");
 let labels = document.getElementsByClassName("control_labels");
 
 //Sliders
-let grid = controls[0];
-let pixelIgnore = controls[1];
-let nodeDis = controls[2];
-let pixelForObj = controls[3];
-let minMovement = controls[4];
+// let sensitivitySlider Defined in other file
+let gridControl = controls[0];
+let pixelControl = controls[1];
+let nodeDisControl = controls[2];
+let pixelForObjControl = controls[3];
+let minMovementControl = controls[4];
 
 //Sets new values on slider change
-grid.addEventListener("input", function () { newGridSize = grid.value; hasSettingsUpdated = true; labels[0].innerHTML = grid.value });
-pixelIgnore.addEventListener("input", function () { newPixelIgnoreRange = pixelIgnore.value; hasSettingsUpdated = true; labels[1].innerHTML = pixelIgnore.value });
-nodeDis.addEventListener("input", function () { newNodeDistance = nodeDis.value; hasSettingsUpdated = true; labels[2].innerHTML = nodeDis.value });
-pixelForObj.addEventListener("input", function () { newPixelsRequiredForObject = pixelForObj.value; hasSettingsUpdated = true; labels[3].innerHTML = pixelForObj.value });
-minMovement.addEventListener("input", function () { newMinimumMovements = minMovement.value; hasSettingsUpdated = true; labels[4].innerHTML = minMovement.value });
+// grid.addEventListener("input", function () { newGridSize = grid.value; hasSettingsUpdated = true; labels[0].innerHTML = grid.value });
+// pixelIgnore.addEventListener("input", function () { newPixelIgnoreRange = pixelIgnore.value; hasSettingsUpdated = true; labels[1].innerHTML = pixelIgnore.value });
+// nodeDis.addEventListener("input", function () { newNodeDistance = nodeDis.value; hasSettingsUpdated = true; labels[2].innerHTML = nodeDis.value });
+// pixelForObj.addEventListener("input", function () { newPixelsRequiredForObject = pixelForObj.value; hasSettingsUpdated = true; labels[3].innerHTML = pixelForObj.value });
+// minMovement.addEventListener("input", function () { newMinimumMovements = minMovement.value; hasSettingsUpdated = true; labels[4].innerHTML = minMovement.value });
 
 //new setting, used to overwrite mode settings.
-let newGridSize = gridSize;
-let newPixelIgnoreRange = pixelIgnoreRange;
-let newNodeDistance = nodeDistance;
-let newPixelsRequiredForObject = pixelsRequiredForObject;
-let newMinimumMovements = minimumMovements;
+// let newGridSize = gridSize;
+// let newPixelIgnoreRange = pixelIgnoreRange;
+// let newNodeDistance = nodeDistance;
+// let newPixelsRequiredForObject = pixelsRequiredForObject;
+// let newMinimumMovements = minimumMovements;
 
 let personMode = {
-    gridSize: 8,
+    gridSize: 3,
     pixelIgnoreRange: 25,
     nodeDistance: 40,
     pixelsRequiredForObject: 30,
@@ -191,15 +199,30 @@ let customMode = {
     minimumMovements: 5,
 }
 
+function saveCustomMode() {
+    let customMode = {
+        "gridSize": gridSize,
+        "pixelIgnoreRange": pixelIgnoreRange,
+        "nodeDistance": nodeDistance,
+        "pixelsRequiredForObject": pixelsRequiredForObject,
+        "minimumMovements": minimumMovements,
+    }
+
+    localStorage.setItem("custom", JSON.stringify(customMode));
+    var retrievedObject = JSON.parse(localStorage.getItem('custom'));
+    console.log('retrievedObject: ', retrievedObject);
+    return true;
+}
+
 
 let hasSettingsUpdated = false;
 function updateSettings() {
     if (hasSettingsUpdated) {
-        customMode.gridSize = parseInt(newGridSize);
-        customMode.pixelIgnoreRange = parseInt(newPixelIgnoreRange);
-        customMode.nodeDistance = parseInt(newNodeDistance);
-        customMode.pixelsRequiredForObject = parseInt(newPixelsRequiredForObject);
-        customMode.minimumMovements = parseInt(newMinimumMovements);
+        // customMode.gridSize = parseInt(newGridSize);
+        // customMode.pixelIgnoreRange = parseInt(newPixelIgnoreRange);
+        // customMode.nodeDistance = parseInt(newNodeDistance);
+        // customMode.pixelsRequiredForObject = parseInt(newPixelsRequiredForObject);
+        // customMode.minimumMovements = parseInt(newMinimumMovements);
         changeMode(3);
         hasSettingsUpdated = false;
     }
@@ -237,29 +260,26 @@ function changeMode(modeNo = 0) {
     minimumMovements = mode.minimumMovements
 
     //setting sliders
-    grid.value = gridSize;
-    pixelIgnore.value = pixelIgnoreRange;
-    nodeDis.value = nodeDistance;
-    pixelForObj.value = pixelsRequiredForObject;
-    minMovement.value = minimumMovements;
+    gridControl.value = gridSize;
+    pixelControl.value = pixelIgnoreRange;
+    nodeDisControl.value = nodeDistance;
+    pixelForObjControl.value = pixelsRequiredForObject;
+    minMovementControl.value = minimumMovements;
 
     //setting labels
-    labels[0].innerHTML = grid.value;
-    labels[1].innerHTML = pixelIgnore.value;
-    labels[2].innerHTML = nodeDis.value;
-    labels[3].innerHTML = pixelForObj.value;
-    labels[4].innerHTML = minMovement.value;
+    // labels[0].innerHTML = grid.value;
+    // labels[1].innerHTML = pixelIgnore.value;
+    // labels[2].innerHTML = nodeDis.value;
+    // labels[3].innerHTML = pixelForObj.value;
+    // labels[4].innerHTML = minMovement.value;
 
 }
-changeMode(1);
 
-
-
-
+changeMode(0);
 let area = [];
 
 const alertSound = document.createElement("audio");
-alertSound.src = "ding.wav";
+alertSound.src = "pop.mp3";
 alertSound.volume = 0.1;
 
 class CustomArea {
@@ -275,11 +295,10 @@ class CustomArea {
         this.triggered = false; //if data should be send to database
 
         this.onDelay = false;
-        this.cooldown = 20; //sec before data can be send to database (in case there is too much noise in area on canvas)
-        this.extraDelay;
-        this.delayTill;
-        this.color = "";
+        this.cooldown = 20; //sec before data can be send to database (in case if there is too much noise in the area on canvas)
 
+        this.delayTill;
+        this.color = ""; //average color of the detected object
 
     }
 
@@ -292,23 +311,23 @@ class CustomArea {
             addTriggerLog(this.id);
 
             //Sets up form and sends data to database
-            let timeNow = new Date().toLocaleTimeString();
+            if (useDatabase) {
+                let timeNow = new Date().toLocaleTimeString();
 
-            let form = document.getElementById("canvas_form")
-            let inputs = form.getElementsByTagName("input");
+                let form = document.getElementById("canvas_form")
+                let inputs = form.getElementsByTagName("input");
 
-            inputs[0].value = dateToday(); //date
-            inputs[1].value = timeNow; //time
-            inputs[2].value = this.color; //car Color
+                inputs[0].value = dateToday(); //date
+                inputs[1].value = timeNow; //time
+                inputs[2].value = this.color; //car Color
 
-            sendData();
-            form.reset();
-            this.color = "";
+                sendData();
+                form.reset();
+                this.color = "";
 
-            // takePicture(); //function needs to be fixed
-
-            // sendData({ date: dateToday(), time: timeNow, color: this.carColor })
-
+                // takePicture(); //function needs to be fixed
+                // sendData({ date: dateToday(), time: timeNow, color: this.carColor })
+            }
             console.log("Yay detected");
             //Set delay
             this.delayTill = frameCounter + 30 * this.cooldown; //30fps = 1s * 20 = 20sec delay
@@ -413,14 +432,20 @@ function addTriggerLog(id) {
 
     let div = document.createElement("div");
     div.style.textAlign = "center";
+    div.classList.add("message");
 
     let label = document.createElement("label");
-    label.innerHTML = id;
+    label.innerHTML = "ID: " + id;
+
+    let label1 = document.createElement("label");
+    let date = timeToday();
+    label1.innerHTML = " " + date;
 
     div.appendChild(label);
+    div.appendChild(label1);
     let log = document.getElementById("trigger_log");
     log.appendChild(div);
-    if (log.childElementCount > 5) {
+    if (log.childElementCount > 40) {
         let firstElement = log.getElementsByTagName("div")[0];
         log.removeChild(firstElement);
 
@@ -436,4 +461,31 @@ function dateToday() {
 
     today = yyyy + '-' + mm + '-' + dd;
     return today;
+}
+
+function timeToday() {
+    let time = new Date()
+
+    let year = time.getFullYear();
+    let month = time.getMonth();
+    let day = time.getDate();
+    let hour = time.getHours();
+    let minute = time.getMinutes();
+    let second = time.getSeconds();
+
+    let date =
+        hour + ":" +
+        minute + ":" +
+        second + " " +
+        day + "/" +
+        month + "/" +
+        year;
+
+    return date;
+}
+
+function toggleAutoSensitivity() {
+    autoSensitivity = !autoSensitivity;
+    if (autoSensitivity) sensitivitySlider.setAttribute("disabled", true);
+    else sensitivitySlider.removeAttribute("disabled");
 }

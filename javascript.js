@@ -1,11 +1,5 @@
 "use strict"
-
-// let devWidth = 360;
-// let devHeight = 180;
-
-// let devWidth = 360*3;
-// let devHeight = 180*3;
-
+let sensitivitySlider = document.getElementById("sensitivity_slider");
 
 let devWidth = 1920 / 3;
 let devHeight = 1080 / 3;
@@ -25,17 +19,24 @@ const ctx = canvas.getContext("2d");
 
 //pixels settings
 let isCustomArea = false; //whether only specific portion of image should be processed
+
 let gridSize = 30;
 let showGrid = false; //Shows gridSize for pixel checking
 let showActiveGrid = false; //Shows pixels that have changed.
+
 let pixelIgnoreRange = 30; // it will ignore pixel change where the colors (e.g: range is 5, RGB are 20,20,20. Ignored range will be 15 - 25.
+let averageNoise = 10; //To account for object movement (the is no active object noise subtraction from background noise)
+let autoSensitivity = true;
+
 let nodeDistance = 60; //How far the nodes have to be to be counted as the same object
 let pixelsRequiredForObject = 20; //objects have to have this no of pixels to count as real object.
 let minimumMovements = 2; //how many pixels have to change for the object to be moving.
 
+var totalPixelNoise = 0;
+
 let manualCalibration = false; //not working right now
 
-let oldData;
+let oldData; //stores pixel information for every frame
 let frameCounter = 0; //for timings/objects
 let nodes = []; //stores all nodes;
 let objects = [];//stores all objects
@@ -54,9 +55,7 @@ async function getMedia(constraints) {
         console.log(err);
     }
 }
-
 getMedia(constraints);
-
 
 
 //When it is ready to stream
@@ -108,8 +107,8 @@ function clearPicture() {
     // image.setAttribute("src", data);
 }
 
-
 //for manual 
+
 // let sampleList = [];
 // let range = 10;
 // function addSample(red,green,blue) {
@@ -129,6 +128,7 @@ function clearPicture() {
 
 
 //User stats
+
 let fps = 0;
 let timerStart;
 let timerReset = false;
@@ -140,7 +140,6 @@ let framesRefresher = 30;
 function startProcessing() {
     setInterval(function () {
 
-
         //Performance/stats
         if (timerStart == undefined || timerReset) {
             timerStart = Date.now();
@@ -150,18 +149,24 @@ function startProcessing() {
         if (paused == false) {
 
             ctx.drawImage(video, 0, 0, canvas.width, devHeight);
+
             checkPixels(); //Check whether pixels have changed
 
             //If there is overwhelming number of pixel nodes, reset
-            //Userfull whenever image loads and all the pixels are new.
+            //Useful whenever image loads for the first time and all the pixels are new or the camera shakes.
             if (nodes.length > 1000) nodes.splice(1);
+
             for (let i = 0; i < nodes.length; i++) {
                 nodes[i].draw();
             }
 
             findCluster(); //Finds cluster of pixel nodes and groups them.
             createObjects(); //Creates objects using the clusters found
+
+            // if (autoSensitivity && frameCounter % 10 == 0) fixBackgroundNoise();
+
             nodes.splice(0);
+
 
         } //if paused
 
@@ -181,11 +186,11 @@ function startProcessing() {
             }
         }
 
-        // if (frameCounter % (150) == 0) checkAverageBrightness(); Testing/Experimental
+
 
 
         frameCounter++;
-        updateSettings(); //If UI settings have been updated (UI.js) e.g, user changed mode.
+        // updateSettings(); //If UI settings have been updated (UI.js) e.g, user changed mode.
 
 
         fps++; //counts each frame
@@ -194,7 +199,7 @@ function startProcessing() {
         let time = Date.now();
         let timePassed = (time - timerStart) / 1000;
         if ((time - timerStart) / 1000 >= 1) {
-            statLabels[0].innerHTML = fps + " ";
+            statLabels[0].innerHTML = fps + " "; //fps label
             statLabels[1].innerHTML = Math.round((1 / (1 / (timePassed / fps))) / (1 / 30) * 100) + "% ";
             timerReset = true;
 
@@ -214,6 +219,8 @@ function startProcessing() {
 let imageData;
 function checkPixels() {
     imageData = ctx.getImageData(0, 0, devWidth, devHeight); //Saves canvas data
+    // if (frameCounter % (150) == 0) checkAverageBrightness(); //Testing/Experimental
+    totalPixelNoise = 0;
 
     /*//Creates color sample on click;
     if(mouse.click) {
@@ -272,7 +279,10 @@ function checkPixels() {
                             imageData.data[position1] = 0;
                             imageData.data[position1 + 1] = 255;
                             imageData.data[position1 + 2] = 0;
+
                         }
+                        totalPixelNoise++;
+                        // if (frameCounter % 1 == 0) console.log(totalPixelNoise);
                     }
                 }
 
@@ -310,6 +320,9 @@ function checkPixels() {
             }
         }
     }
+    // if (frameCounter % 20 == 0) console.log(totalPixelNoise);
+    if (autoSensitivity && frameCounter % 20 == 0) fixBackgroundNoise();
+
 
     //creates a copy of old frame
     oldData = ctx.getImageData(0, 0, devWidth, devHeight);
@@ -534,6 +547,7 @@ function createObjects() {
     }
 }
 
+//Represents pixels that have changed color more then specified range (pixelIgnoreRange) suggesting a movement has occurred
 class Node {
     constructor(x, y) {
         this.x = x;
@@ -561,14 +575,14 @@ class Node {
 
     }
 }
-let objectId = 0;
+
 class Object {
     constructor(nodesNo, groupNo) {
         this.x = 0;
         this.y = 0;
         this.nodesNo = nodesNo;
         this.groupNo = groupNo;
-        this.id = objectId++;
+        this.id = Math.round(Math.random() * 5000);
         this.spreadX;
         this.spreadY;
         this.timeCreated = Date.now();
@@ -637,8 +651,9 @@ class Object {
             } else ctx.strokeStyle = "red";
             ctx.font = "12px Arial";
 
-            // ctx.drawImage(image1, this.x-this.spreadX/2, this.y-this.spreadY/2, this.spreadX, this.spreadY);
-            ctx.rect(this.x - this.spreadX / 2, this.y - this.spreadY / 2, this.spreadX, this.spreadY);
+            // ctx.drawImage(image1, this.x-this.spreadX/2, this.y-this.spreadY/2, this.spreadX, this.spreadY); //image
+            ctx.rect(this.x - this.spreadX / 2, this.y - this.spreadY / 2, this.spreadX, this.spreadY); // square around object
+            // ctx.rect(this.x, this.y, 5, 5); //point at object
             // ctx.fill();
             ctx.stroke();
 
@@ -650,6 +665,7 @@ class Object {
                     if (n == this.nodeAverage.length - 1) {
                         this.average = total / this.nodeAverage.length
                         this.nodeAverage.splice(1, this.nodeAverage.length);
+
                     }
                 }
             }
@@ -658,8 +674,8 @@ class Object {
             ctx.fillStyle = "yellow";
             // ctx.fillText("SUS DETECTED " /*+ this.id*/ +((this.delayTimeStamp+this.delay)-frameCounter)  , this.x-50, this.y)
             // ctx.fillText("SUS DETECTED " + this.timeAlive  , this.x-50, this.y)
-            // ctx.fillText("O " + this.id + " N " + this.average, this.x - 50, this.y)
-            ctx.fillText("OBJ", this.x - this.spreadX / 2, this.y - this.spreadY / 2 + 10)
+            // ctx.fillText("O " + this.id + " N " + Math.round(this.average), this.x - 50, this.y)
+            ctx.fillText("Object", this.x - this.spreadX / 2, this.y - this.spreadY / 2 + 15)
 
             ctx.stroke();
         }
@@ -706,6 +722,20 @@ function checkArea(x, y) {
             }
         } return false;
     }
+}
+
+
+function fixBackgroundNoise() {
+    // if (autoSensitivity && frameCounter % 20 == 0) {
+    console.log("noise: " + totalPixelNoise + " Sensitivity " + pixelIgnoreRange);
+    if (totalPixelNoise > averageNoise) pixelIgnoreRange++;
+    else if (totalPixelNoise < 1) pixelIgnoreRange--;
+
+    if (pixelIgnoreRange > 50) pixelIgnoreRange = 50;
+    if (pixelIgnoreRange < 1) pixelIgnoreRange = 1;
+
+    sensitivitySlider.value = pixelIgnoreRange;
+    // }
 }
 
 
@@ -760,8 +790,8 @@ function findNewXYSpread(obj, obj1) {
     obj.spreadY = newSpreadY;
 }
 
-const imagel = new Image();
-imagel.src = "lol.jpg";
+// const imagel = new Image();
+// imagel.src = "lol.jpg";
 
 
 function checkAverageBrightness() {
@@ -783,7 +813,15 @@ function checkAverageBrightness() {
             // }
 
             if (y == imageData.height - 1 && x == imageData.width - 1) {
-                console.log("Red: " + aveRed / total + " Green: " + aveGreen / total + " Blue: " + aveBlue / total);
+                // console.log("Red: " + aveRed / total + " Green: " + aveGreen / total + " Blue: " + aveBlue / total);
+
+                aveRed = aveRed / total;
+                aveGreen = aveGreen / total;
+                aveBlue = aveBlue / total;
+
+                let averageBrightness = 0.2126 * aveRed + 0.7152 * aveGreen + 0.0722 * aveBlue;
+                console.log(averageBrightness);
+
             }
             //marks non moving pixels
             // if (showGrid) {
@@ -796,11 +834,10 @@ function checkAverageBrightness() {
 }
 
 
-
 //Future plans
 
 //Snapshop functionality, saving location
 //timer delay/system for survilance camera (sound for extra points :P) I think done :P
 
 //Extra
-//Multiple cameara setup
+// Multiple cameara setup
