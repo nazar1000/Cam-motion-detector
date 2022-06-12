@@ -14,6 +14,7 @@
 // }
 
 let useDatabase = false;
+let canvasPosition = canvas.getBoundingClientRect();
 
 const mouse = {
     click: false,
@@ -25,6 +26,7 @@ let newArea;
 
 //Events for custom area Setting
 canvas.addEventListener("mousedown", function (e) {
+
     mouse.click = true;
     mouse.x = e.x - canvasPosition.left;
     mouse.y = Math.round(e.y - canvasPosition.top) + window.pageYOffset;
@@ -489,3 +491,7 @@ function toggleAutoSensitivity() {
     if (autoSensitivity) sensitivitySlider.setAttribute("disabled", true);
     else sensitivitySlider.removeAttribute("disabled");
 }
+
+window.addEventListener("resize", function () {
+    canvasPosition = canvas.getBoundingClientRect();
+});

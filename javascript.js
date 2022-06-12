@@ -12,7 +12,7 @@ let stream = null;
 
 const image = document.getElementsByTagName("img")[0];
 const canvas = document.getElementsByTagName("canvas")[0];
-let canvasPosition = canvas.getBoundingClientRect();
+// let canvasPosition = canvas.getBoundingClientRect();
 canvas.width = devWidth;
 canvas.height = devHeight;
 const ctx = canvas.getContext("2d");
@@ -727,7 +727,7 @@ function checkArea(x, y) {
 
 function fixBackgroundNoise() {
     // if (autoSensitivity && frameCounter % 20 == 0) {
-    console.log("noise: " + totalPixelNoise + " Sensitivity " + pixelIgnoreRange);
+    // console.log("noise: " + totalPixelNoise + " Sensitivity " + pixelIgnoreRange);
     if (totalPixelNoise > averageNoise) pixelIgnoreRange++;
     else if (totalPixelNoise < 1) pixelIgnoreRange--;
 
