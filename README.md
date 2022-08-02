@@ -2,6 +2,8 @@
 #### A little project I was planing to make for sometime untill I finally managed to do it. 
 #### Its made of js, no libraries, except WebRTC which is build into js I think.
 
+You can demo it here https://nazar1000.github.io/
+
 ## What it can do:
 - It can be used as a simple motion detector which can notify user by sound. (browser needs to be open)
 - You can setup custom zones to check specific areas for movement.
